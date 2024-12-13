@@ -5,10 +5,7 @@ import json
 load_dotenv()
 
 def transform_corpus_to_knowledge_graph(corpus_text):
-    """
-    Transform the corpus into a knowledge graph by querying an LLM (Groq).
-    The LLM will generate triples (head, relation, tail) representing knowledge from the text.
-    """
+  
     # Initialize the LLM (Groq)
     llm = ChatGroq(
         model="mixtral-8x7b-32768",  
@@ -28,7 +25,7 @@ def transform_corpus_to_knowledge_graph(corpus_text):
 
     # Generate the response from the LLM
     response = llm.invoke(prompt)
-
+    print("Response from the LLM before Parsing : ",response)
     # Parse the response to extract triples
     triples = parse_triples(response)
 

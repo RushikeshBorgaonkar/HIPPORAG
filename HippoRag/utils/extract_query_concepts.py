@@ -1,16 +1,27 @@
-import spacy
-nlp = spacy.load("en_core_web_sm")
+from langchain_groq import ChatGroq
 
 def query_concepts(query):
     """
-    Extract key concepts from the query using spaCy dependency parsing or Groq if needed.
+    Extract key concepts from the query using Groq LLM.
     """
-    doc = nlp(query)
-    concepts = []
+    llm = ChatGroq(
+        model="mixtral-8x7b-32768",  
+        temperature=0.5,
+        max_tokens=1024,
+    )
 
-    for token in doc:
-        if token.dep_ in ("nsubj", "dobj", "attr", "pobj"):
-            concepts.append(normalize_text(token.text))
+    prompt = f"""
+    Extract the key concepts from the following query. The concepts should be the primary entities or topics in the query. 
+    You should only extract meaningful, relevant concepts and avoid stopwords or unrelated words.
+
+    Query: "{query}"
+
+    Extracted Concepts: 
+    """
+    
+    response = llm.invoke(prompt)
+    concepts = response.content.strip().split(",")  
+    concepts = [normalize_text(concept.strip()) for concept in concepts]
 
     return concepts
 

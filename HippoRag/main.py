@@ -117,7 +117,7 @@ def generate_response(state: KnowledgeGraphState):
         return update_state(state, {"response": response})
     
     context_data = generate_response_LLM.extract_textual_subgraph_data(subgraph)
-    print("Subgraph Data:", context_data)
+    print("Context passed to LLM:", context_data)
     response = generate_response_LLM.generate_augmented_response(query, context_data)
     print("Response:", response)
     return update_state(state, {"response": response})
@@ -147,10 +147,7 @@ workflow.add_edge("generate_response", END)
 
 @app.route("/", methods=["GET", "POST"])
 def chat():
-    response = None
-    query = ""
-    graph_path = None
-
+    
     if request.method == "POST":
         query = request.form["query"]
         state = KnowledgeGraphState(query=query)  

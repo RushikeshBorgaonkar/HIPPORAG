@@ -10,15 +10,12 @@ def generate_augmented_response(query, context_str):
     )
 
     prompt = f"""
-    You are an advanced assistant capable of synthesizing and analyzing information from a structured dataset.
-    The context provided is extracted from a knowledge graph but has been converted into meaningful textual information.
-    Focus only on the insights, facts, and relationships derived from the graph, and exclude references to structural details like "nodes" or "edges."
-    
-    Here is the context: 
-    {context_str}
-    
-    Based on this context, answer the following query comprehensively and concisely:
-    {query}
+    You are an assistant that provides comprehensive answers by analyzing and synthesizing information from the given context. 
+    The context is derived from the relationships and relevant information in the knowledge graph. The graph data includes various connected concepts, but you should not directly mention the nodes, edges, or their relationships in your answer. Only use the high-level information that the context provides.
+
+    Context: {context_str}
+
+    Answer the following question based on the provided context: {query}
     """
 
     response = llm.invoke(prompt)
@@ -26,16 +23,16 @@ def generate_augmented_response(query, context_str):
     return response.content
 
 def extract_textual_subgraph_data(subgraph):
-   
     context_str = ""
-    print(f"Subgraph ke nodes : {subgraph.nodes()}")
+    
+    for node in subgraph.nodes():
+        context_str += f"{node}\n"  
+    
     for node in subgraph.nodes():
         neighbors = list(subgraph.neighbors(node))
-        context_str += f"Node: {node} -> Neighbors: {', '.join(map(str, neighbors))}\n"
-        
         for neighbor in neighbors:
-            edge_data = subgraph.get_edge_data(node, neighbor)  
-            context_str += f"Edge: {node} -> {neighbor} with data: {edge_data}\n"
+            edge_data = subgraph.get_edge_data(node, neighbor)
+            context_str += f"{node} -> {neighbor}: {edge_data['label']}\n"
     
     return context_str
 

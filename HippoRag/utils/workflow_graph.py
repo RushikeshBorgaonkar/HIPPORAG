@@ -11,7 +11,6 @@ def create_workflow_graph(workflow):
         
         workflow_graph.add_node(node_name, label=node_name)
 
-  
     for start_node, end_node in workflow.edges:
         workflow_graph.add_edge(start_node, end_node)
     
