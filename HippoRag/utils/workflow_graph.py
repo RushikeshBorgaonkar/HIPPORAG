@@ -6,12 +6,12 @@ import plotly.graph_objects as go
 def create_workflow_graph(workflow):
     workflow_graph = nx.DiGraph()
 
-    # Extract nodes from workflow and add to NetworkX graph
+ 
     for node_name in workflow.nodes:
-        # You can add custom attributes if needed, e.g., label or function name
+        
         workflow_graph.add_node(node_name, label=node_name)
 
-    # Extract edges from workflow and add to NetworkX graph
+  
     for start_node, end_node in workflow.edges:
         workflow_graph.add_edge(start_node, end_node)
     

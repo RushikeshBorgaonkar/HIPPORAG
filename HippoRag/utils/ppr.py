@@ -22,26 +22,25 @@ def apply_ppr(graph, query_concepts, alpha=0.85):
     Apply Personalized PageRank (PPR) to the graph using query concepts as seeds.
     """
     graph_nodes = [normalize_text(node) for node in graph.nodes()]
-    print(f"Graph nodes: {graph_nodes}")  # Add this line to inspect the nodes
+    print(f"Graph nodes: {graph_nodes}")
     
     matched_concepts = match_query_concepts_to_graph(query_concepts, graph_nodes)
-    print("MATCHED CONCEPTS :" , matched_concepts)
+    print("MATCHED CONCEPTS :", matched_concepts)
     
     if not matched_concepts:
-        raise ValueError(f"Query concepts {query_concepts} could not be matched to the graph nodes!")
-
-   
+        return {"message": f"No query concepts {query_concepts} could be matched to the graph nodes."}
+    
     personalization = {node: 1 if node in matched_concepts else 0 for node in graph.nodes()}
-    print("Personlization : ",personalization)
-    print("==============================================================================================================================================================")
+    print("Personalization:", personalization)
+
     try:
         scores = nx.pagerank(graph, alpha=alpha, personalization=personalization)
     except ZeroDivisionError:
-        raise ValueError("Graph is disconnected, and PageRank cannot be applied!")
-    
-    print("Scores : ",scores)
-    print("=================================================================================================================================================")
+        return {"message": "Graph is disconnected, and PageRank cannot be applied!"}
+
+    print("Scores:", scores)
     return scores
+
 
 
 def normalize_text(text):

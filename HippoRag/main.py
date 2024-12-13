@@ -22,7 +22,7 @@ app = Flask(__name__)
 
 class KnowledgeGraphState(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True) 
-    query: str ="tell me about django?"
+    query: str =""
     top_k: int =10
     text_chunks: list = []  
     all_triples: list = []
@@ -38,7 +38,7 @@ def update_state(state: KnowledgeGraphState, new_state) :
 
 
 def load_data(state: KnowledgeGraphState) :
-    pdf_path ="C:/Users/Coditas-Admin/Desktop/POC HIPPO RAG/Hippo/Basic KG/Python data.pdf"   
+    pdf_path ="C:/Users/Coditas-Admin/Desktop/POC HIPPO RAG/Hippo/Basic KG/Python Data.pdf"   
     print(f"Loading data from {pdf_path}...")
     
     try:
@@ -84,16 +84,25 @@ def extract_query_concepts_node(state: KnowledgeGraphState) :
     print(f"Query concepts: {query_concepts}")
     return update_state(state, {"query_concepts": query_concepts})
 
-def personalized_pagerank(state: KnowledgeGraphState) :
+def personalized_pagerank(state: KnowledgeGraphState):
     knowledge_graph = state.knowledge_graph
     query_concepts = state.query_concepts
     ppr_scores = ppr.apply_ppr(knowledge_graph, query_concepts)
+    
+    if "message" in ppr_scores:       
+        return update_state(state, {"ppr_scores": {}, "message": ppr_scores["message"]})
     return update_state(state, {"ppr_scores": ppr_scores})
+
 
 def retrieve_relevant_subgraph(state: KnowledgeGraphState):
     knowledge_graph = state.knowledge_graph
     ppr_scores = state.ppr_scores
     top_k = state.top_k
+
+    if not ppr_scores:
+        message = state.message if "message" in state else "No relevant subgraph could be generated due to missing PPR scores."
+        return update_state(state, {"subgraph": None, "message": message})
+    
     subgraph = subgraph_retrieval.retrieve_subgraph(knowledge_graph, ppr_scores, top_k=top_k)
     visualize.visualize_graph(subgraph, title="Relevant Subgraph")
     return update_state(state, {"subgraph": subgraph})
@@ -101,6 +110,12 @@ def retrieve_relevant_subgraph(state: KnowledgeGraphState):
 def generate_response(state: KnowledgeGraphState):
     subgraph = state.subgraph
     query = state.query
+
+    if not subgraph:
+        context_data = state.message if "message" in state else "No relevant data could be retrieved for the query."
+        response = f"No response can be generated because: {context_data}"
+        return update_state(state, {"response": response})
+    
     context_data = generate_response_LLM.extract_textual_subgraph_data(subgraph)
     print("Subgraph Data:", context_data)
     response = generate_response_LLM.generate_augmented_response(query, context_data)
@@ -108,10 +123,8 @@ def generate_response(state: KnowledgeGraphState):
     return update_state(state, {"response": response})
 
 
-# Initialize StateGraph
 workflow = StateGraph(KnowledgeGraphState)
 
-# Add nodes to the workflow with updated names
 workflow.add_node("load_data", load_data)
 workflow.add_node("extract_triplets", extract_triplets)
 workflow.add_node("build_knowledge_graph", build_knowledge_graph)
@@ -120,7 +133,7 @@ workflow.add_node("personalized_pagerank", personalized_pagerank)
 workflow.add_node("retrieve_subgraph", retrieve_relevant_subgraph)
 workflow.add_node("generate_response", generate_response)
 
-# Define workflow connections
+
 workflow.add_edge(START, "load_data")
 workflow.add_edge("load_data", "extract_triplets")
 workflow.add_edge("extract_triplets", "build_knowledge_graph")
@@ -131,7 +144,7 @@ workflow.add_edge("retrieve_subgraph", "generate_response")
 workflow.add_edge("generate_response", END)
 
    
-# Flask routes
+
 @app.route("/", methods=["GET", "POST"])
 def chat():
     response = None
@@ -140,11 +153,11 @@ def chat():
 
     if request.method == "POST":
         query = request.form["query"]
-        state = KnowledgeGraphState(query=query)  # Initialize with the user's query
+        state = KnowledgeGraphState(query=query)  
         compiled_workflow = workflow.compile()
         result = compiled_workflow.invoke(state)
-        response = result["response"] # Extract the response
-        # Generate workflow graph
+        response = result["response"]
+    
         work_flow_graph = workflow_graph.create_workflow_graph(workflow)
         workflow_graph.visualize_workflow(work_flow_graph)
         

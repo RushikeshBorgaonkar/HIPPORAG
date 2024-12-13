@@ -2,9 +2,7 @@ from langchain_groq import ChatGroq
 
 
 def generate_augmented_response(query, context_str):
-    """
-    Generate a response using Groq LLM by providing context and a query.
-    """
+   
     llm = ChatGroq(
         model="mixtral-8x7b-32768",  
         temperature=0.5,
@@ -12,9 +10,15 @@ def generate_augmented_response(query, context_str):
     )
 
     prompt = f"""
-    You are an assistant that provides comprehensive answers by analyzing and synthesizing information from the given context. 
-    The context provided is the graph data like nodes and edges which are connecting to some information . So you have to generate a repsonse on this given context and dont tell that this node or this is edge on those nodes and edges generate a response Context: {context_str}
-    Answer the following question using the provided context: {query}
+    You are an advanced assistant capable of synthesizing and analyzing information from a structured dataset.
+    The context provided is extracted from a knowledge graph but has been converted into meaningful textual information.
+    Focus only on the insights, facts, and relationships derived from the graph, and exclude references to structural details like "nodes" or "edges."
+    
+    Here is the context: 
+    {context_str}
+    
+    Based on this context, answer the following query comprehensively and concisely:
+    {query}
     """
 
     response = llm.invoke(prompt)
@@ -22,9 +26,7 @@ def generate_augmented_response(query, context_str):
     return response.content
 
 def extract_textual_subgraph_data(subgraph):
-    """
-    Convert the subgraph into a textual string representing the nodes and edges.
-    """
+   
     context_str = ""
     print(f"Subgraph ke nodes : {subgraph.nodes()}")
     for node in subgraph.nodes():
