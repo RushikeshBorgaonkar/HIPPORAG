@@ -22,6 +22,7 @@ def query_concepts(query):
     response = llm.invoke(prompt)
     concepts = response.content.strip().split(",")  
     concepts = [normalize_text(concept.strip()) for concept in concepts]
+    print("")
 
     return concepts
 

@@ -147,7 +147,10 @@ workflow.add_edge("generate_response", END)
 
 @app.route("/", methods=["GET", "POST"])
 def chat():
+    response = None
+    query = ""
     
+
     if request.method == "POST":
         query = request.form["query"]
         state = KnowledgeGraphState(query=query)  
