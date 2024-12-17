@@ -4,11 +4,13 @@ from networkx import DiGraph
 from flask import Flask, request, render_template
 import networkx as nx
 import matplotlib.pyplot as plt
+
 import os
 from networkx.drawing.nx_agraph import graphviz_layout
 from pydantic import BaseModel,ConfigDict
-from dotenv import load_dotenv
+
 from utils import (
+    db,
     data_loading,
     built_knowledge_graph,
     extract_query_concepts,
@@ -40,7 +42,7 @@ def update_state(state: KnowledgeGraphState, new_state) :
 
 
 def load_data(state: KnowledgeGraphState) :
-    pdf_path ="C:/Users/Coditas-Admin/Desktop/POC HIPPO RAG/Hippo/Basic KG/python doc.pdf"   
+    pdf_path ="C:/Users/Coditas-Admin/Desktop/POC HIPPO RAG/Hippo/Basic KG/Python Data.pdf"   
     print(f"Loading data from {pdf_path}...")
     
     try:
@@ -77,8 +79,8 @@ def build_knowledge_graph(state: KnowledgeGraphState) :
     all_triples = state.all_triples
     knowledge_graph = built_knowledge_graph.build_knowledge_graph_from_llm(all_triples)
     print("Knowledge Graph:", knowledge_graph)
-    
-    visualize.visualize_graph(knowledge_graph, title="Whole Knowledge Graph")
+    db.save_graph_to_neo4j(knowledge_graph)
+    # visualize.visualize_graph(knowledge_graph, title="Whole Knowledge Graph")
     return update_state(state, {"knowledge_graph": knowledge_graph})
 
 def extract_query_concepts_node(state: KnowledgeGraphState) :
@@ -107,7 +109,7 @@ def retrieve_relevant_subgraph(state: KnowledgeGraphState):
         return update_state(state, {"subgraph": None, "message": message})
     
     subgraph = subgraph_retrieval.retrieve_subgraph(knowledge_graph, ppr_scores, top_k=top_k)
-    visualize.visualize_graph(subgraph, title="Relevant Subgraph")
+    # visualize.visualize_graph(subgraph, title="Relevant Subgraph")
     return update_state(state, {"subgraph": subgraph})
 
 def generate_response(state: KnowledgeGraphState):
@@ -169,9 +171,8 @@ def chat():
         response = result["response"]
     
         work_flow_graph = workflow_graph.create_workflow_graph(workflow)
-        workflow_graph.visualize_workflow(work_flow_graph)
+        # workflow_graph.visualize_workflow(work_flow_graph)
         
-
     return render_template("chat.html", query=query, response=response)
 
 if __name__ == "__main__":
