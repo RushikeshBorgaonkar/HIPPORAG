@@ -1,11 +1,13 @@
 from langgraph.graph import StateGraph, START, END
-
+from langchain_community.tools import DuckDuckGoSearchRun
 from networkx import DiGraph  
 from flask import Flask, request, render_template
 import networkx as nx
 import matplotlib.pyplot as plt
+import os
 from networkx.drawing.nx_agraph import graphviz_layout
 from pydantic import BaseModel,ConfigDict
+from dotenv import load_dotenv
 from utils import (
     data_loading,
     built_knowledge_graph,
@@ -38,7 +40,7 @@ def update_state(state: KnowledgeGraphState, new_state) :
 
 
 def load_data(state: KnowledgeGraphState) :
-    pdf_path ="C:/Users/Coditas-Admin/Desktop/POC HIPPO RAG/Hippo/Basic KG/Python Data.pdf"   
+    pdf_path ="C:/Users/Coditas-Admin/Desktop/POC HIPPO RAG/Hippo/Basic KG/python doc.pdf"   
     print(f"Loading data from {pdf_path}...")
     
     try:
@@ -75,6 +77,7 @@ def build_knowledge_graph(state: KnowledgeGraphState) :
     all_triples = state.all_triples
     knowledge_graph = built_knowledge_graph.build_knowledge_graph_from_llm(all_triples)
     print("Knowledge Graph:", knowledge_graph)
+    
     visualize.visualize_graph(knowledge_graph, title="Whole Knowledge Graph")
     return update_state(state, {"knowledge_graph": knowledge_graph})
 
@@ -112,8 +115,16 @@ def generate_response(state: KnowledgeGraphState):
     query = state.query
 
     if not subgraph:
-        context_data = state.message if "message" in state else "No relevant data could be retrieved for the query."
-        response = f"No response can be generated because: {context_data}"
+     
+        search = DuckDuckGoSearchRun()
+        search_result = search.invoke(query)
+        
+        if search_result:
+            response = f"Couldn't find the relevant information for the query from the databse, but I have generated the response from the DuckDuckGO search Tool: {search_result}"
+            
+        else:
+            response = "No relevant data could be retrieved for the query."
+        print("Response :" , response)
         return update_state(state, {"response": response})
     
     context_data = generate_response_LLM.extract_textual_subgraph_data(subgraph)
@@ -121,7 +132,6 @@ def generate_response(state: KnowledgeGraphState):
     response = generate_response_LLM.generate_augmented_response(query, context_data)
     print("Response:", response)
     return update_state(state, {"response": response})
-
 
 workflow = StateGraph(KnowledgeGraphState)
 
